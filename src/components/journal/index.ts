@@ -1,0 +1,1 @@
+export { default as DailyJournal } from './daily-journal' 

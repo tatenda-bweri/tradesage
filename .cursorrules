@@ -1,0 +1,306 @@
+# TradeSage Trading Journal - Cursor Development Rules
+
+# Project Overview
+project_name: "TradeSage Trading Journal"
+description: "Comprehensive trading journal application with performance tracking, behavioral analysis, and strategic planning"
+
+# Development Principles
+development_principles:
+  - "Follow the PRD specifications exactly - do not invent new features"
+  - "Maintain modular architecture for independent component development"
+  - "Use modern web development best practices"
+  - "Implement responsive, mobile-first design"
+  - "Follow dark theme design system with specified color standards"
+  - "Ensure accessibility compliance (ARIA, keyboard navigation)"
+  - "Write comprehensive tests for all critical functionality"
+  - "Optimize for performance (sub-200ms UI interactions)"
+
+# Task Management
+task_tracking:
+  source_file: "tasks.md"
+  auto_complete_on:
+    - "commit containing task reference"
+    - "file modification matching task scope"
+    - "component implementation completion"
+  
+  completion_patterns:
+    # Component patterns
+    - pattern: "- \\[ \\] Create (.+) component"
+      complete_when: "component file created and exported"
+      files_to_check: ["src/components/**/*.tsx", "src/components/**/*.ts"]
+    
+    # Database patterns  
+    - pattern: "- \\[ \\] Create (.+) model"
+      complete_when: "model file created with schema"
+      files_to_check: ["src/models/**/*.ts", "src/lib/database/**/*.ts"]
+    
+    # API patterns
+    - pattern: "- \\[ \\] (Build|Create|Implement) (.+) API"
+      complete_when: "API route file created"
+      files_to_check: ["src/api/**/*.ts", "src/pages/api/**/*.ts", "app/api/**/*.ts"]
+    
+    # Import functionality
+    - pattern: "- \\[ \\] (.+) parser"
+      complete_when: "parser file created with tests"
+      files_to_check: ["src/lib/parsers/**/*.ts", "src/lib/import/**/*.ts"]
+    
+    # Chart/visualization patterns
+    - pattern: "- \\[ \\] (Create|Build|Implement) (.+) chart"
+      complete_when: "chart component created"
+      files_to_check: ["src/components/charts/**/*.tsx"]
+    
+    # Testing patterns
+    - pattern: "- \\[ \\] (Write|Create) (.+) tests"
+      complete_when: "test file created"
+      files_to_check: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts"]
+
+# Branch Strategy
+branching:
+  main_branches:
+    - "main" # Production ready code
+    - "develop" # Integration branch
+  
+  feature_branches:
+    # Phase-based development
+    - "feature/dashboard-*" # Dashboard components
+    - "feature/import-*" # Import system features
+    - "feature/trades-*" # Trade management features
+    - "feature/calendar-*" # Calendar and stats features
+    - "feature/journal-*" # Trading journal features
+    - "feature/notebook-*" # Knowledge management features
+    - "feature/analytics-*" # Advanced analytics features
+    
+    # Component-based development
+    - "component/*" # Individual component development
+    - "fix/*" # Bug fixes
+    - "refactor/*" # Code refactoring
+    - "test/*" # Test implementation
+
+# Component Architecture
+architecture:
+  structure: |
+    src/
+    ├── components/
+    │   ├── ui/ # Reusable UI components
+    │   ├── dashboard/ # Dashboard specific components
+    │   ├── charts/ # Chart components
+    │   ├── forms/ # Form components
+    │   ├── tables/ # Data table components
+    │   └── layout/ # Layout components
+    ├── lib/
+    │   ├── parsers/ # Import parsers
+    │   ├── utils/ # Utility functions
+    │   ├── database/ # Database operations
+    │   ├── calculations/ # Trading calculations
+    │   └── types/ # TypeScript types
+    ├── hooks/ # Custom React hooks
+    ├── pages/ # Page components
+    ├── api/ # API routes
+    └── styles/ # Styling files
+
+# Code Standards
+code_standards:
+  typescript: true
+  strict_mode: true
+  formatting: "prettier"
+  linting: "eslint"
+  
+  naming_conventions:
+    components: "PascalCase" # TradingDashboard
+    files: "kebab-case" # trading-dashboard.tsx  
+    functions: "camelCase" # calculateProfitLoss
+    constants: "UPPER_SNAKE_CASE" # MAX_TRADES_PER_PAGE
+    types: "PascalCase" # TradeRecord
+  
+  import_order:
+    - "react imports"
+    - "third-party libraries" 
+    - "internal components"
+    - "utilities and helpers"
+    - "types"
+    - "styles"
+
+# Performance Requirements
+performance:
+  dashboard_load_time: "< 2 seconds"
+  ui_interaction_response: "< 200ms"
+  chart_render_time: "< 500ms"
+  import_processing: "< 30 seconds for typical statements"
+  
+  optimization_strategies:
+    - "Lazy loading for large datasets"
+    - "Virtual scrolling for tables"
+    - "Memoization for expensive calculations"
+    - "Code splitting for route-based chunks"
+    - "Image optimization and lazy loading"
+
+# Testing Strategy
+testing:
+  unit_tests:
+    - "All utility functions"
+    - "Calculation algorithms"
+    - "Data validation logic"
+    - "Import parsers"
+  
+  integration_tests:
+    - "Complete import workflows"
+    - "Dashboard data flow"
+    - "Trade management operations"
+    - "Calendar interactions"
+  
+  e2e_tests:
+    - "Critical user journeys"
+    - "Import process end-to-end"
+    - "Dashboard navigation"
+    - "Data export functionality"
+
+# Design System
+design_system:
+  theme: "dark"
+  colors:
+    profit: "#4ADE80" # Green
+    loss: "#EF4444" # Red  
+    neutral: "#6B7280" # Gray
+    background: "#1F2937" # Dark gray
+    surface: "#374151" # Medium gray
+    text_primary: "#F9FAFB" # Light gray
+    text_secondary: "#D1D5DB" # Medium light gray
+  
+  typography:
+    heading: "font-bold"
+    body: "font-normal"
+    caption: "font-light text-sm"
+  
+  spacing: "tailwind standard (4px base)"
+  
+  components:
+    cards: "rounded-lg shadow-md bg-surface"
+    buttons: "rounded-md px-4 py-2"
+    inputs: "rounded-md border border-gray-600"
+
+# Data Validation Rules
+validation:
+  trade_records:
+    - "Open and close timestamps chronologically valid"
+    - "Stop loss and take profit realistic relative to open price"
+    - "Position sizes positive and within limits"
+    - "Currency consistency with account"
+    - "Broker ticket IDs unique within account"
+    - "Linked trades reference valid parents"
+  
+  import_data:
+    - "Required fields present"
+    - "Date formats valid"
+    - "Numeric values in valid ranges"
+    - "Account information consistent"
+
+# Security Requirements
+security:
+  - "HTTPS for all communications"
+  - "Input sanitization for all user data"
+  - "File upload validation and size limits"
+  - "Session management and timeout"
+  - "Audit logging for sensitive operations"
+  - "Data encryption at rest for sensitive data"
+
+# Progress Tracking
+progress_tracking:
+  milestone_completion:
+    milestone_1: "Core Foundation (Phases 1-2)"
+    milestone_2: "Data Management (Phases 3-5)"  
+    milestone_3: "Advanced Features (Phases 6-8)"
+    milestone_4: "Production Ready (Phases 9-11)"
+  
+  component_completion:
+    dashboard: ["Net P&L Card", "Profit Factor Card", "Win Rate Card", "P&L Chart", "Radar Chart", "Calendar View"]
+    import: ["File Upload", "Exness Parser", "Validation", "Preview", "Processing Pipeline"]
+    trades: ["Trade Table", "Filtering", "Export", "Management"]
+    calendar: ["Multi-view", "Daily Journal", "Navigation"]
+    stats: ["Metrics Dashboard", "Temporal Analysis", "Interactive Filters"]
+    journal: ["Daily Cards", "Trade Plans", "Notes System"]
+    notebook: ["Strategy Docs", "Market Insights", "Goal Tracking"]
+
+# Deployment Configuration
+deployment:
+  environments:
+    development: "Local development server"
+    staging: "Testing environment"
+    production: "Live application"
+  
+  checks_before_deployment:
+    - "All tests passing"
+    - "Performance benchmarks met"
+    - "Security scan completed"
+    - "Browser compatibility verified"
+    - "Accessibility audit passed"
+
+# Documentation Requirements
+documentation:
+  code_documentation: "JSDoc for all functions and components"
+  api_documentation: "OpenAPI/Swagger specifications"
+  user_guides: "Step-by-step usage instructions"
+  developer_guides: "Setup and contribution instructions"
+  
+  required_docs:
+    - "README.md with setup instructions"
+    - "API.md with endpoint documentation"
+    - "CONTRIBUTING.md with development guidelines"
+    - "DEPLOYMENT.md with deployment procedures"
+
+# Commit Message Standards
+commit_standards:
+  format: "type(scope): description"
+  types:
+    - "feat: new feature"
+    - "fix: bug fix"
+    - "docs: documentation"
+    - "style: formatting changes"
+    - "refactor: code refactoring"
+    - "test: adding tests"
+    - "chore: maintenance tasks"
+  
+  examples:
+    - "feat(dashboard): add profit factor gauge component"
+    - "fix(import): handle malformed Exness HTML dates"
+    - "test(trades): add filtering validation tests"
+
+# File Organization Rules
+file_rules:
+  max_file_size: "500 lines (excluding generated files)"
+  component_structure: |
+    // Component file structure
+    1. Imports (external dependencies first)
+    2. Type definitions
+    3. Component interface/props
+    4. Component implementation
+    5. Default export
+    6. Named exports (if any)
+  
+  barrel_exports: "Use index.ts files for clean imports"
+  absolute_imports: "Configure path mapping for cleaner imports"
+
+# Error Handling Standards
+error_handling:
+  user_facing_errors: "Clear, actionable error messages"
+  developer_errors: "Detailed error logs with context"
+  fallback_ui: "Graceful degradation for component failures"
+  import_errors: "Specific guidance for import failures"
+  
+  error_boundaries: "Implement at component and page levels"
+  logging: "Structured logging with error tracking"
+
+# Performance Monitoring
+monitoring:
+  metrics_to_track:
+    - "Page load times"
+    - "Chart render performance"
+    - "Import processing duration"
+    - "Database query performance"
+    - "Memory usage"
+    - "Bundle size"
+  
+  alerts:
+    - "Performance degradation"
+    - "Error rate increases"
+    - "Failed imports"
+    - "Database connection issues"

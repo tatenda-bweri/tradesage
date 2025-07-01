@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  body {
+    @apply bg-background text-text-primary;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+  
+  /* Dark theme as default */
+  :root {
+    color-scheme: dark;
+  }
+  
+  /* Custom scrollbar for dark theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-surface-dark;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-neutral rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-neutral-light;
+  }
+  
+  /* Focus styles for accessibility */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-profit ring-offset-2 ring-offset-background;
+  }
+  
+  /* Selection styles */
+  ::selection {
+    @apply bg-profit bg-opacity-20 text-text-primary;
+  }
+}
+
+@layer components {
+  /* Card components */
+  .card {
+    @apply bg-surface rounded-lg shadow-card border border-surface-light;
+  }
+  
+  .card-hover {
+    @apply hover:shadow-card-hover transition-shadow duration-200;
+  }
+  
+  /* Button components */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-profit focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+  }
+  
+  .btn-primary {
+    @apply bg-profit text-background hover:bg-profit-dark;
+  }
+  
+  .btn-secondary {
+    @apply bg-surface text-text-primary hover:bg-surface-light border border-surface-light;
+  }
+  
+  .btn-destructive {
+    @apply bg-loss text-white hover:bg-loss-dark;
+  }
+  
+  .btn-ghost {
+    @apply hover:bg-surface hover:text-text-primary;
+  }
+  
+  /* Input components */
+  .input {
+    @apply flex h-10 w-full rounded-md border border-surface-light bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-profit focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  
+  /* Trading-specific utility classes */
+  .profit-text {
+    @apply text-profit;
+  }
+  
+  .loss-text {
+    @apply text-loss;
+  }
+  
+  .neutral-text {
+    @apply text-neutral;
+  }
+  
+  .profit-bg {
+    @apply bg-profit bg-opacity-10;
+  }
+  
+  .loss-bg {
+    @apply bg-loss bg-opacity-10;
+  }
+  
+  .profit-border {
+    @apply border-profit;
+  }
+  
+  .loss-border {
+    @apply border-loss;
+  }
+  
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  /* Loading states */
+  .loading {
+    @apply animate-pulse bg-surface-light;
+  }
+  
+  /* Glass morphism effect */
+  .glass {
+    @apply bg-surface bg-opacity-80 backdrop-blur-sm border border-surface-light;
+  }
+}
+
+@layer utilities {
+  /* Custom utilities for trading journal */
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .text-pretty {
+    text-wrap: pretty;
+  }
+  
+  /* Performance optimizations */
+  .will-change-transform {
+    will-change: transform;
+  }
+  
+  .will-change-opacity {
+    will-change: opacity;
+  }
+  
+  /* Print styles */
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+  }
+} 
