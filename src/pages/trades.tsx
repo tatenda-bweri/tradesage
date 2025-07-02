@@ -1,14 +1,41 @@
-import React from 'react'
+import React, { useState, useMemo } from 'react'
 import Head from 'next/head'
 import MainLayout from '@/components/layout/main-layout'
 import { TradeTable } from '@/components/tables'
+import { TradeFilters, TradeForm, TradeDetails } from '@/components/trades'
 import { useTrades } from '@/hooks/useTrades'
-import { Loading } from '@/components/ui'
+import { Button, Loading } from '@/components/ui'
+import { DateRange } from '@/types/dateRange'
+import { dateRangeToQueryParams } from '@/lib/utils/dateRangeUtils'
+import { TradeRecord } from '@/lib/types'
+import { Plus } from 'lucide-react'
 
 const TradesPage = () => {
+  const [dateRange, setDateRange] = useState<DateRange>({ startDate: null, endDate: null })
+  const [selectedSymbol, setSelectedSymbol] = useState('all')
+  const [selectedType, setSelectedType] = useState('all')
+  
+  // State for managing trade form and details modals
+  const [isTradeFormOpen, setIsTradeFormOpen] = useState(false)
+  const [isTradeDetailsOpen, setIsTradeDetailsOpen] = useState(false)
+  const [selectedTrade, setSelectedTrade] = useState<TradeRecord | null>(null)
+
+  // Convert filters to query parameters
+  const filters = useMemo(() => {
+    const params = dateRangeToQueryParams(dateRange)
+    if (selectedSymbol !== 'all') {
+      params.symbol = selectedSymbol
+    }
+    if (selectedType !== 'all') {
+      params.type = selectedType
+    }
+    return params
+  }, [dateRange, selectedSymbol, selectedType])
+
   const { trades, loading, error, total, page, pageSize, setPage, setPageSize } = useTrades({
     page: 1,
-    pageSize: 50
+    pageSize: 50,
+    filters
   })
 
   if (loading) {
@@ -57,6 +84,17 @@ const TradesPage = () => {
           </div>
 
           <div className="mb-8">
+            <TradeFilters
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              selectedSymbol={selectedSymbol}
+              onSymbolChange={setSelectedSymbol}
+              selectedType={selectedType}
+              onTypeChange={setSelectedType}
+            />
+          </div>
+
+          <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-semibold">All Trades</h2>
               <div className="text-sm text-text-secondary">
@@ -64,18 +102,79 @@ const TradesPage = () => {
               </div>
             </div>
             
+            <div className="flex justify-end mb-4">
+              <Button
+                className="bg-profit text-white"
+                onClick={() => {
+                  setSelectedTrade(null)
+                  setIsTradeFormOpen(true)
+                }}
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add Trade
+              </Button>
+            </div>
+            
             <TradeTable 
               trades={trades}
-              onEdit={(_trade) => {
-                // TODO: Implement edit functionality
+              onEdit={(trade) => {
+                setSelectedTrade(trade)
+                setIsTradeFormOpen(true)
               }}
-              onDelete={(_id) => {
-                // TODO: Implement delete functionality
+              onDelete={(id) => {
+                // Implement delete confirmation logic
+                if (window.confirm('Are you sure you want to delete this trade?')) {
+                  // TODO: Implement actual deletion
+                  console.log('Deleting trade', id)
+                }
               }}
-              onDuplicate={(_trade) => {
-                // TODO: Implement duplicate functionality
+              onDuplicate={(trade) => {
+                const duplicateTrade = {
+                  ...trade,
+                  id: `temp_${Date.now()}`, // Temporary ID that will be replaced when saved
+                  ticketId: `${trade.ticketId}_copy`,
+                }
+                setSelectedTrade(duplicateTrade)
+                setIsTradeFormOpen(true)
               }}
             />
+            
+            {/* Trade Form Modal */}
+            {isTradeFormOpen && (
+              <TradeForm
+                isOpen={isTradeFormOpen}
+                onClose={() => setIsTradeFormOpen(false)}
+                onSave={(trade) => {
+                  // TODO: Implement save functionality
+                  console.log('Saving trade', trade)
+                  setIsTradeFormOpen(false)
+                }}
+                trade={selectedTrade || undefined}
+                symbols={Array.from(new Set(trades.map(t => t.symbol)))}
+              />
+            )}
+            
+            {/* Trade Details Modal */}
+            {isTradeDetailsOpen && selectedTrade && (
+              <TradeDetails
+                isOpen={isTradeDetailsOpen}
+                onClose={() => setIsTradeDetailsOpen(false)}
+                onEdit={(trade) => {
+                  setIsTradeDetailsOpen(false)
+                  setSelectedTrade(trade)
+                  setIsTradeFormOpen(true)
+                }}
+                onDelete={(id) => {
+                  setIsTradeDetailsOpen(false)
+                  // Implement delete confirmation logic
+                  if (window.confirm('Are you sure you want to delete this trade?')) {
+                    // TODO: Implement actual deletion
+                    console.log('Deleting trade', id)
+                  }
+                }}
+                trade={selectedTrade}
+              />
+            )}
             
             {/* Pagination */}
             {total > pageSize && (

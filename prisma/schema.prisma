@@ -91,9 +91,9 @@ model Trade {
 model JournalEntry {
   id        String   @id @default(cuid())
   date      DateTime
-  content   String
-  tags      String   @default("[]") // JSON array of tags
-  mood      String?  // confident, neutral, anxious, etc.
+  content   String   @default("") // Rich text HTML content
+  tags      String   @default("[]") // JSON array of tags - as string for SQLite
+  mood      String?  // positive, neutral, negative
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

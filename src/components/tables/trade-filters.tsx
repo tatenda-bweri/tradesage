@@ -1,13 +1,13 @@
+import { format } from 'date-fns'
 import React, { useState, useEffect } from 'react'
 import { Filter, X, Calendar, Tag, TrendingUp, TrendingDown } from 'lucide-react'
-import { format, subDays, startOfDay, endOfDay } from 'date-fns'
+
+import { DateRangePicker } from '@/components/ui'
+import { DateRange } from '@/types/dateRange'
 import { cn } from '@/lib/utils/cn'
 
 interface TradeFilters {
-  dateRange: {
-    start: Date | null
-    end: Date | null
-  }
+  dateRange: DateRange
   tags: string[]
   side: 'all' | 'BUY' | 'SELL'
   outcome: 'all' | 'profit' | 'loss'
@@ -44,7 +44,7 @@ const TradeFilters: React.FC<TradeFiltersProps> = ({
 
   const clearFilters = () => {
     const clearedFilters: TradeFilters = {
-      dateRange: { start: null, end: null },
+      dateRange: { startDate: null, endDate: null },
       tags: [],
       side: 'all',
       outcome: 'all',
@@ -56,19 +56,13 @@ const TradeFilters: React.FC<TradeFiltersProps> = ({
 
   const hasActiveFilters = () => {
     return (
-      localFilters.dateRange.start ||
-      localFilters.dateRange.end ||
+      localFilters.dateRange.startDate ||
+      localFilters.dateRange.endDate ||
       localFilters.tags.length > 0 ||
       localFilters.side !== 'all' ||
       localFilters.outcome !== 'all' ||
       localFilters.symbol !== ''
     )
-  }
-
-  const getQuickDatePreset = (days: number) => {
-    const end = endOfDay(new Date())
-    const start = startOfDay(subDays(new Date(), days))
-    updateFilters({ dateRange: { start, end } })
   }
 
   const toggleTag = (tag: string) => {
@@ -119,49 +113,12 @@ const TradeFilters: React.FC<TradeFiltersProps> = ({
               <span>Date Range</span>
             </h4>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-              <div>
-                <label className="block text-xs text-text-secondary mb-1">Start Date</label>
-                <input
-                  type="date"
-                  value={localFilters.dateRange.start ? format(localFilters.dateRange.start, 'yyyy-MM-dd') : ''}
-                  onChange={(e) => {
-                    const start = e.target.value ? new Date(e.target.value) : null
-                    updateFilters({ dateRange: { ...localFilters.dateRange, start } })
-                  }}
-                  className="w-full px-3 py-2 bg-surface border border-surface-light rounded text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-text-secondary mb-1">End Date</label>
-                <input
-                  type="date"
-                  value={localFilters.dateRange.end ? format(localFilters.dateRange.end, 'yyyy-MM-dd') : ''}
-                  onChange={(e) => {
-                    const end = e.target.value ? new Date(e.target.value) : null
-                    updateFilters({ dateRange: { ...localFilters.dateRange, end } })
-                  }}
-                  className="w-full px-3 py-2 bg-surface border border-surface-light rounded text-sm"
-                />
-              </div>
-            </div>
-
-            {/* Quick Presets */}
-            <div className="flex flex-wrap gap-2">
-              {[
-                { label: 'Last 7 days', days: 7 },
-                { label: 'Last 30 days', days: 30 },
-                { label: 'Last 90 days', days: 90 }
-              ].map((preset) => (
-                <button
-                  key={preset.days}
-                  onClick={() => getQuickDatePreset(preset.days)}
-                  className="px-3 py-1 text-xs bg-surface-light text-text-secondary rounded hover:bg-surface hover:text-text-primary transition-colors"
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
+            <DateRangePicker
+              value={localFilters.dateRange}
+              onChange={(dateRange: DateRange) => updateFilters({ dateRange })}
+              placeholder="Select date range for trades"
+              className="w-full"
+            />
           </div>
 
           {/* Symbol Filter */}
@@ -268,12 +225,12 @@ const TradeFilters: React.FC<TradeFiltersProps> = ({
       {/* Active Filters Summary */}
       {hasActiveFilters() && (
         <div className="flex flex-wrap gap-2">
-          {localFilters.dateRange.start && (
+          {localFilters.dateRange.startDate && (
             <div className="flex items-center space-x-1 px-2 py-1 bg-surface-light rounded text-xs">
               <Calendar className="w-3 h-3" />
               <span>
-                {format(localFilters.dateRange.start, 'MMM dd')}
-                {localFilters.dateRange.end && ` - ${format(localFilters.dateRange.end, 'MMM dd')}`}
+                {format(localFilters.dateRange.startDate, 'MMM dd')}
+                {localFilters.dateRange.endDate && ` - ${format(localFilters.dateRange.endDate, 'MMM dd')}`}
               </span>
             </div>
           )}

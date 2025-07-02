@@ -1,13 +1,15 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { GetServerSideProps } from 'next'
 import { getServerSession } from 'next-auth'
 import { authOptions } from './api/auth/[...nextauth]'
 import MainLayout from '@/components/layout/main-layout'
-import DailyJournal from '@/components/journal/daily-journal'
+import { DailyJournal, JournalEntry, JournalEditor } from '@/components/journal'
 import { TradeRecord } from '@/lib/types'
 import { useTrades } from '@/hooks/useTrades'
+import { useJournalEntries } from '@/hooks/useJournalEntries'
 import Loading from '@/components/ui/Loading'
-import { BookOpen, Calendar, TrendingUp } from 'lucide-react'
+import { BookOpen, Calendar, TrendingUp, Edit, Plus } from 'lucide-react'
+import { JournalEntryType } from '@/components/journal/journal-entry'
 
 interface JournalPageProps {
   user: {
@@ -18,14 +20,55 @@ interface JournalPageProps {
 }
 
 const JournalPage: React.FC<JournalPageProps> = ({ user }) => {
-  const { trades, loading, error } = useTrades()
+  const { trades, loading: loadingTrades, error: tradesError } = useTrades()
+  const { 
+    entries, 
+    loading: loadingEntries, 
+    error: entriesError,
+    createEntry,
+    updateEntry,
+    deleteEntry 
+  } = useJournalEntries()
+  
+  const [isCreating, setIsCreating] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<JournalEntryType | null>(null)
 
   const handleTradeClick = (_trade: TradeRecord) => {
     // Navigate to trade details or open modal
     // TODO: Implement trade details functionality
   }
 
-  if (loading) {
+  const handleCreateEntry = async (entry: Omit<JournalEntryType, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      await createEntry(entry)
+      setIsCreating(false)
+    } catch (error) {
+      console.error('Failed to create entry:', error)
+    }
+  }
+
+  const handleUpdateEntry = async (entry: Omit<JournalEntryType, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!editingEntry) return
+    
+    try {
+      await updateEntry(editingEntry.id, entry)
+      setEditingEntry(null)
+    } catch (error) {
+      console.error('Failed to update entry:', error)
+    }
+  }
+
+  const handleDeleteEntry = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this journal entry? This action cannot be undone.')) {
+      try {
+        await deleteEntry(id)
+      } catch (error) {
+        console.error('Failed to delete entry:', error)
+      }
+    }
+  }
+
+  if (loadingTrades || loadingEntries) {
     return (
       <MainLayout>
         <div className="container mx-auto px-4 py-8">
@@ -35,13 +78,13 @@ const JournalPage: React.FC<JournalPageProps> = ({ user }) => {
     )
   }
 
-  if (error) {
+  if (tradesError || entriesError) {
     return (
       <MainLayout>
         <div className="container mx-auto px-4 py-8">
           <div className="card p-8 text-center">
-            <div className="text-loss mb-4">Error loading trades</div>
-            <p className="text-text-secondary">{error}</p>
+            <div className="text-loss mb-4">Error loading data</div>
+            <p className="text-text-secondary">{tradesError || entriesError}</p>
           </div>
         </div>
       </MainLayout>
@@ -59,12 +102,22 @@ const JournalPage: React.FC<JournalPageProps> = ({ user }) => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-2">
-            <BookOpen className="w-8 h-8 text-profit" />
-            <h1 className="text-3xl font-bold text-text-primary">Trading Journal</h1>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-3">
+              <BookOpen className="w-8 h-8 text-profit" />
+              <h1 className="text-3xl font-bold text-text-primary">Trading Journal</h1>
+            </div>
+            <button
+              onClick={() => setIsCreating(true)}
+              className="btn btn-primary flex items-center space-x-2"
+              disabled={isCreating}
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Entry</span>
+            </button>
           </div>
           <p className="text-text-secondary">
-            Daily breakdown of your trading performance and journey
+            Document your trading journey with rich text journal entries
           </p>
         </div>
 
@@ -107,30 +160,84 @@ const JournalPage: React.FC<JournalPageProps> = ({ user }) => {
           </div>
         </div>
 
-        {/* Daily Journal Component */}
-        {trades.length > 0 ? (
-          <DailyJournal 
-            trades={trades} 
-            onTradeClick={handleTradeClick}
-            className="mb-8"
-          />
-        ) : (
-          <div className="card p-12 text-center">
-            <BookOpen className="w-16 h-16 text-text-secondary mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-text-primary mb-2">
-              No Trading Data
-            </h3>
-            <p className="text-text-secondary mb-6">
-              Import your trading data to start tracking your daily journal
-            </p>
-            <button 
-              onClick={() => window.location.href = '/dashboard'}
-              className="btn btn-primary"
-            >
-              Import Trades
-            </button>
+        {/* Journal Editor (Create/Edit) */}
+        {(isCreating || editingEntry) && (
+          <div className="mb-8">
+            <JournalEditor
+              entry={editingEntry || undefined}
+              onSave={editingEntry ? handleUpdateEntry : handleCreateEntry}
+              onCancel={() => {
+                setIsCreating(false)
+                setEditingEntry(null)
+              }}
+            />
           </div>
         )}
+
+        {/* Journal Entries */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-text-primary mb-4">
+            Journal Entries
+          </h3>
+          {entries.length > 0 ? (
+            <div className="space-y-4">
+              {entries.map(entry => (
+                <JournalEntry
+                  key={entry.id}
+                  entry={entry}
+                  onEdit={setEditingEntry}
+                  onDelete={handleDeleteEntry}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="card p-8 text-center">
+              <BookOpen className="w-12 h-12 text-text-secondary mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-text-primary mb-2">
+                No Journal Entries Yet
+              </h3>
+              <p className="text-text-secondary mb-4">
+                Start documenting your trading journey by creating your first entry
+              </p>
+              <button
+                onClick={() => setIsCreating(true)}
+                className="btn btn-primary"
+                disabled={isCreating}
+              >
+                Create Your First Entry
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Daily Trade Journal */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-text-primary mb-4">
+            Trade Performance
+          </h3>
+          {trades.length > 0 ? (
+            <DailyJournal 
+              trades={trades} 
+              onTradeClick={handleTradeClick}
+            />
+          ) : (
+            <div className="card p-8 text-center">
+              <BookOpen className="w-12 h-12 text-text-secondary mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-text-primary mb-2">
+                No Trading Data
+              </h3>
+              <p className="text-text-secondary mb-4">
+                Import your trading data to see your performance
+              </p>
+              <button 
+                onClick={() => window.location.href = '/dashboard'}
+                className="btn btn-primary"
+              >
+                Import Trades
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Trading Tips */}
         <div className="card p-6">

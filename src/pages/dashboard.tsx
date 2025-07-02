@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useState, useMemo } from 'react'
 import Head from 'next/head'
-import { TradingDashboard } from '@/components/dashboard'
+import { TradingDashboard, DashboardFilters } from '@/components/dashboard'
 import { RadarChart } from '@/components/charts'
 import { CalendarView } from '@/components/calendar'
 import { TradeTable } from '@/components/tables'
@@ -10,14 +10,26 @@ import { useAnalytics } from '@/hooks/useAnalytics'
 import { Loading, ErrorBoundary } from '@/components/ui'
 import MainLayout from '@/components/layout/main-layout'
 import { NotebookTabs } from '@/components/notebook'
+import { DateRange } from '@/types/dateRange'
+import { dateRangeToQueryParams } from '@/lib/utils/dateRangeUtils'
 
 const DashboardRealPage = () => {
+  const [dateRange, setDateRange] = useState<DateRange>({ startDate: null, endDate: null })
+
+  // Convert date range to query parameters for API calls
+  const dateFilters = useMemo(() => {
+    return dateRangeToQueryParams(dateRange)
+  }, [dateRange])
+
   const { trades, loading: tradesLoading, error: tradesError, total, page, pageSize, setPage, setPageSize } = useTrades({
     page: 1,
-    pageSize: 20
+    pageSize: 20,
+    filters: dateFilters
   })
   
-  const { metrics, temporalAnalysis, loading: analyticsLoading, error: analyticsError } = useAnalytics({})
+  const { metrics, temporalAnalysis, loading: analyticsLoading, error: analyticsError } = useAnalytics({
+    dateRange
+  })
 
   // Transform data for dashboard components
   const dashboardMetrics = metrics ? {
@@ -110,9 +122,16 @@ const DashboardRealPage = () => {
                 Trading Dashboard
               </h1>
               <NotebookTabs className="mb-6" />
-              <p className="text-text-secondary">
+              <p className="text-text-secondary mb-4">
                 Real-time performance metrics from your trading data
               </p>
+              
+              {/* Dashboard Filters */}
+              <DashboardFilters
+                dateRange={dateRange}
+                onDateRangeChange={setDateRange}
+                className="mb-6"
+              />
             </div>
 
             {/* Main Dashboard */}

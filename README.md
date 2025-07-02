@@ -18,9 +18,10 @@ A comprehensive trading journal application with performance tracking, behaviora
 - **Styling**: Tailwind CSS with custom design system
 - **Charts**: Recharts for data visualization
 - **Forms**: React Hook Form with Zod validation
+- **Rich Text**: React Quill for rich text editing
 - **State Management**: Zustand for global state
 - **Database**: Prisma with SQLite
-- **Testing**: Jest + React Testing Library
+- **Testing**: Jest + React Testing Library (including accessibility testing with jest-axe)
 - **Linting**: ESLint + Prettier
 
 ## Design System
@@ -34,6 +35,34 @@ The application uses a dark theme design system with the following color palette
 - **Surface**: #374151 (Medium gray)
 - **Text Primary**: #F9FAFB (Light gray)
 - **Text Secondary**: #D1D5DB (Medium light gray)
+
+## Custom UI Components
+
+TradeSage includes several custom-built UI components:
+
+### DateRangePicker
+
+A comprehensive date range selection component featuring:
+
+- Dual calendar view for month-to-month range selection
+- Quick preset options (Today, Yesterday, This Week, etc.)
+- Custom range selection with start and end dates
+- Responsive design with mobile optimization
+- Keyboard accessibility and screen reader support
+
+### RichTextEditor
+
+A customized React Quill integration that provides:
+
+- Multiple toolbar configurations (basic, standard, full)
+- Customized styling to match application theme
+- Performance optimizations for large content
+- Character count and validation
+- Read-only and disabled states
+- Content sanitization for security
+- Responsive design and accessibility features
+
+See the `docs/components/` directory for detailed documentation on these components.
 
 ## Getting Started
 
@@ -101,25 +130,35 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ## Project Structure
 
-```
+```text
 src/
 ├── components/          # React components
-│   ├── ui/             # Reusable UI components
+│   ├── ui/             # Reusable UI components (DateRangePicker, RichTextEditor, etc.)
 │   ├── dashboard/      # Dashboard specific components
 │   ├── charts/         # Chart components
 │   ├── forms/          # Form components
+│   ├── journal/        # Journal components with rich text support
+│   ├── notebook/       # Notebook components with rich text support
 │   ├── tables/         # Data table components
+│   ├── profile/        # User profile components
+│   ├── settings/       # Settings components
 │   └── layout/         # Layout components
 ├── lib/                # Utility libraries
 │   ├── parsers/        # Import parsers
-│   ├── utils/          # Utility functions
+│   ├── utils/          # Utility functions (incl. dateRangeUtils, sanitization)
 │   ├── database/       # Database operations
 │   ├── calculations/   # Trading calculations
 │   └── types/          # TypeScript types
-├── hooks/              # Custom React hooks
+├── hooks/              # Custom React hooks (incl. useDateRangePicker, useRichTextEditor)
+├── types/              # Global TypeScript types
 ├── pages/              # Next.js pages
-├── api/                # API routes
-└── styles/             # Styling files
+│   ├── api/            # API routes
+│   └── ...             # Page components
+├── styles/             # Styling files (including quill-custom.css)
+└── __tests__/          # Test files
+    ├── components/     # Component tests
+    ├── performance/    # Performance tests
+    └── accessibility/  # Accessibility tests
 ```
 
 ## Development Guidelines
@@ -160,13 +199,19 @@ export default Component
 - Test data validation logic
 - Test import parsing functionality
 - Test chart components
+- Test UI components (including accessibility testing with jest-axe)
+- Performance testing for UI components with large datasets
+- Test rich text editor functionality and sanitization
 
 ### Performance
 
 - Dashboard load time: < 2 seconds
 - UI interaction response: < 200ms
 - Chart render time: < 500ms
+- RichTextEditor render time: < 300ms for standard content, < 1000ms for large content
+- DateRangePicker interaction time: < 100ms
 - Import processing: < 30 seconds for typical statements
+- Journal entry save time: < 500ms
 
 ## Contributing
 

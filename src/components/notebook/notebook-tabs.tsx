@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { BookOpen, Lightbulb, Target, Plus, Search, Filter } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import RichTextEditor from '@/components/ui/RichTextEditor'
 
 type TabType = 'strategy' | 'insights' | 'goals'
 
@@ -182,9 +183,16 @@ const NotebookTabs: React.FC<NotebookTabsProps> = ({ className }) => {
                     {doc.updatedAt.toLocaleDateString()}
                   </div>
                 </div>
-                <p className="text-sm text-text-secondary line-clamp-2 mb-2">
-                  {doc.content}
-                </p>
+                <div className="text-sm text-text-secondary line-clamp-2 mb-2">
+                  {doc.content ? (
+                    <div 
+                      className="prose prose-sm dark:prose-invert max-w-none"
+                      dangerouslySetInnerHTML={{ __html: doc.content.substring(0, 150) + (doc.content.length > 150 ? '...' : '') }}
+                    />
+                  ) : (
+                    <p>No content</p>
+                  )}
+                </div>
                 <div className="flex flex-wrap gap-1">
                   {doc.tags.slice(0, 3).map((tag) => (
                     <span
@@ -232,11 +240,11 @@ const NotebookTabs: React.FC<NotebookTabsProps> = ({ className }) => {
 
               {/* Editor Content */}
               <div className="flex-1 p-4">
-                <textarea
+                <RichTextEditor
                   value={selectedDocument.content}
-                  onChange={(e) => updateDocument(selectedDocument.id, { content: e.target.value })}
+                  onChange={(content) => updateDocument(selectedDocument.id, { content })}
                   placeholder="Start writing your document..."
-                  className="w-full h-full bg-transparent border-none outline-none resize-none text-text-primary"
+                  showCharCount
                 />
               </div>
 

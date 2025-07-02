@@ -1,9 +1,20 @@
 import React from 'react'
 import Head from 'next/head'
+
+import { CalendarView, CalendarFilters } from '@/components/calendar'
 import MainLayout from '@/components/layout/main-layout'
-import { CalendarView } from '@/components/calendar'
+import useDateRangePicker from '@/hooks/useDateRangePicker'
 
 const CalendarPage = () => {
+  const { range, setRange } = useDateRangePicker()
+
+  // Mock data - in real app this would come from API based on range
+  const mockDailyPnLData = [
+    { date: '2024-01-15', pnl: 250, trades: 3 },
+    { date: '2024-01-16', pnl: -150, trades: 2 },
+    { date: '2024-01-17', pnl: 300, trades: 5 },
+  ]
+
   return (
     <MainLayout>
       <Head>
@@ -20,8 +31,18 @@ const CalendarPage = () => {
             </p>
           </div>
 
+          <div className="mb-6">
+            <CalendarFilters
+              dateRange={range}
+              onDateRangeChange={setRange}
+            />
+          </div>
+
           <div className="mb-8">
-            <CalendarView />
+            <CalendarView 
+              dailyPnLData={mockDailyPnLData}
+              onDayClick={(date) => console.log('Day clicked:', date)}
+            />
           </div>
         </div>
       </div>

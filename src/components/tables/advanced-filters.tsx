@@ -48,7 +48,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
 
   const resetFilters = () => {
     const resetFilters: FilterState = {
-      dateRange: { start: null, end: null },
+      dateRange: { startDate: null, endDate: null },
       symbols: [],
       types: [],
       profitRange: { min: null, max: null },
