@@ -1,142 +1,74 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { PrismaClient } from '@prisma/client'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '../auth/[...nextauth]'
+import { AnalyticsCache } from '@/lib/database/analytics-cache'
+import { serializeDates } from '@/lib/utils/dateUtils'
+import { withErrorHandler } from '@/lib/middleware/errorHandler'
+import { z } from 'zod'
 
-const prisma = new PrismaClient()
+const analyticsQuerySchema = z.object({
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(1000).default(100),
+  includeSymbols: z.string().transform(val => val === 'true').default(false)
+})
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === 'GET') {
-    const { accountId, startDate, endDate } = req.query
-    
+    // Check authentication
+    const session = await getServerSession(req, res, authOptions)
+    if (!session?.user?.accountId) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+
+    const query = analyticsQuerySchema.parse(req.query)
+    const { startDate, endDate, page, limit, includeSymbols } = query
+    const accountId = session.user.accountId
+
     try {
-      const where: any = {}
-      if (accountId) where.accountId = accountId as string
-      if (startDate || endDate) {
-        where.openTime = {}
-        if (startDate) where.openTime.gte = new Date(startDate as string)
-        if (endDate) where.openTime.lte = new Date(endDate as string)
+      const filters = {
+        accountId,
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined
       }
 
-      const trades = await prisma.trade.findMany({
-        where,
-        orderBy: { openTime: 'asc' }
-      })
+      // Fetch analytics data using optimized queries with caching
+      const [metrics, temporalAnalysis, dailyPnL, symbolStats] = await Promise.all([
+        AnalyticsCache.getPerformanceMetrics(filters),
+        AnalyticsCache.getTemporalAnalysis(filters),
+        AnalyticsCache.getDailyPnLData(filters, page, limit),
+        includeSymbols ? AnalyticsCache.getSymbolStats(filters) : Promise.resolve([])
+      ])
 
-      if (trades.length === 0) {
-        return res.status(200).json({
-          metrics: {
-            totalTrades: 0,
-            winningTrades: 0,
-            losingTrades: 0,
-            winRate: 0,
-            totalPnL: 0,
-            averageWin: 0,
-            averageLoss: 0,
-            profitFactor: 0,
-            maxDrawdown: 0,
-            sharpeRatio: 0,
-            largestWin: 0,
-            largestLoss: 0,
-            averageTrade: 0,
-            expectancy: 0,
-            riskRewardRatio: 0
-          },
-          temporalAnalysis: {
-            dailyDistribution: [],
-            monthlyDistribution: [],
-            hourlyDistribution: []
-          }
-        })
+      // Add cache headers for client-side caching
+      res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600') // 5min cache, 10min stale
+
+      const response = {
+        metrics: serializeDates(metrics),
+        temporalAnalysis: serializeDates(temporalAnalysis),
+        dailyPnL: serializeDates(dailyPnL),
+        ...(includeSymbols && { symbolStats: serializeDates(symbolStats) }),
+        pagination: {
+          page,
+          limit,
+          hasMore: dailyPnL.length === limit
+        },
+        cached: true // Indicate this response may be cached
       }
 
-      // Calculate basic metrics
-      const totalTrades = trades.length
-      const winningTrades = trades.filter((t: any) => t.profit > 0).length
-      const losingTrades = totalTrades - winningTrades
-      const winRate = (winningTrades / totalTrades) * 100
-      const totalPnL = trades.reduce((sum: number, t: any) => sum + t.profit, 0)
-      
-      const winningTradesData = trades.filter((t: any) => t.profit > 0)
-      const losingTradesData = trades.filter((t: any) => t.profit < 0)
-      
-      const averageWin = winningTradesData.length > 0 
-        ? winningTradesData.reduce((sum: number, t: any) => sum + t.profit, 0) / winningTradesData.length 
-        : 0
-      const averageLoss = losingTradesData.length > 0 
-        ? Math.abs(losingTradesData.reduce((sum: number, t: any) => sum + t.profit, 0) / losingTradesData.length)
-        : 0
-      
-      const profitFactor = averageLoss > 0 ? (averageWin * winningTrades) / (averageLoss * losingTrades) : 0
-      const largestWin = Math.max(...trades.map((t: any) => t.profit))
-      const largestLoss = Math.min(...trades.map((t: any) => t.profit))
-      const averageTrade = totalPnL / totalTrades
-      const expectancy = (winRate / 100) * averageWin - ((1 - winRate / 100) * averageLoss)
-      const riskRewardRatio = averageLoss > 0 ? averageWin / averageLoss : 0
-
-      // Calculate max drawdown
-      let maxDrawdown = 0
-      let peak = 0
-      let runningPnL = 0
-      
-      for (const trade of trades as any[]) {
-        runningPnL += trade.profit
-        if (runningPnL > peak) {
-          peak = runningPnL
-        }
-        const drawdown = peak - runningPnL
-        if (drawdown > maxDrawdown) {
-          maxDrawdown = drawdown
-        }
-      }
-
-      // Calculate Sharpe ratio (simplified)
-      const returns = trades.map((t: any) => t.profit)
-      const meanReturn = returns.reduce((sum: number, r: number) => sum + r, 0) / returns.length
-      const variance = returns.reduce((sum: number, r: number) => sum + Math.pow(r - meanReturn, 2), 0) / (returns.length - 1)
-      const stdDev = Math.sqrt(variance)
-      const sharpeRatio = stdDev > 0 ? meanReturn / stdDev : 0
-
-      // Temporal analysis
-      const dailyDistribution = new Array(7).fill(0)
-      const monthlyDistribution = new Array(12).fill(0)
-      const hourlyDistribution = new Array(24).fill(0)
-
-      trades.forEach((trade: any) => {
-        const date = new Date(trade.openTime)
-        dailyDistribution[date.getDay()]++
-        monthlyDistribution[date.getMonth()]++
-        hourlyDistribution[date.getHours()]++
-      })
-
-      const metrics = {
-        totalTrades,
-        winningTrades,
-        losingTrades,
-        winRate,
-        totalPnL,
-        averageWin,
-        averageLoss,
-        profitFactor,
-        maxDrawdown,
-        sharpeRatio,
-        largestWin,
-        largestLoss,
-        averageTrade,
-        expectancy,
-        riskRewardRatio
-      }
-
-      const temporalAnalysis = {
-        dailyDistribution,
-        monthlyDistribution,
-        hourlyDistribution
-      }
-
-      res.status(200).json({ metrics, temporalAnalysis })
+      res.status(200).json(response)
     } catch (error) {
-      res.status(500).json({ error: 'Failed to calculate performance metrics', details: error })
+      console.error('Analytics performance error:', error)
+      res.status(500).json({ 
+        error: 'Failed to fetch analytics data',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      })
     }
   } else {
     res.setHeader('Allow', ['GET'])
     res.status(405).end(`Method ${req.method} Not Allowed`)
   }
-} 
+}
+
+export default withErrorHandler(handler) 

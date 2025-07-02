@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import { TradeRecord } from '@/lib/types'
 
 interface UseTradesOptions {
-  accountId?: string
   page?: number
   pageSize?: number
   autoFetch?: boolean
@@ -21,7 +21,8 @@ interface UseTradesReturn {
 }
 
 export const useTrades = (options: UseTradesOptions = {}): UseTradesReturn => {
-  const { accountId, page: initialPage = 1, pageSize: initialPageSize = 20, autoFetch = true } = options
+  const { page: initialPage = 1, pageSize: initialPageSize = 20, autoFetch = true } = options
+  const { data: session, status } = useSession()
   
   const [trades, setTrades] = useState<TradeRecord[]>([])
   const [loading, setLoading] = useState(false)
@@ -31,14 +32,17 @@ export const useTrades = (options: UseTradesOptions = {}): UseTradesReturn => {
   const [pageSize, setPageSize] = useState(initialPageSize)
 
   const fetchTrades = async () => {
-    if (!accountId) return
+    if (!session?.user?.id) {
+      setError('User not authenticated')
+      return
+    }
     
     setLoading(true)
     setError(null)
     
     try {
       const params = new URLSearchParams({
-        accountId,
+        accountId: session.user.id,
         page: page.toString(),
         pageSize: pageSize.toString()
       })
@@ -60,18 +64,22 @@ export const useTrades = (options: UseTradesOptions = {}): UseTradesReturn => {
   }
 
   useEffect(() => {
-    if (autoFetch && accountId) {
+    if (autoFetch && status === 'authenticated' && session?.user?.id) {
       fetchTrades()
+    } else if (status === 'unauthenticated') {
+      setError('Please log in to view trades')
     }
-  }, [accountId, page, pageSize, autoFetch])
+  }, [session?.user?.id, status, page, pageSize, autoFetch])
 
   const refetch = () => {
-    fetchTrades()
+    if (session?.user?.id) {
+      fetchTrades()
+    }
   }
 
   return {
     trades,
-    loading,
+    loading: loading || status === 'loading',
     error,
     total,
     page,

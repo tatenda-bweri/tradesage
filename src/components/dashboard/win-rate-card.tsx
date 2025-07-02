@@ -1,6 +1,7 @@
 import React from 'react'
 import { Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import { formatWinRate } from '@/lib/utils/formatters'
 
 interface WinRateCardProps {
   winRate: number // Percentage as decimal (0-1)
@@ -15,6 +16,7 @@ const WinRateCard: React.FC<WinRateCardProps> = ({
   winningTrades,
   className
 }) => {
+  const formattedWinRate = formatWinRate(winningTrades, totalTrades)
   const winRatePercentage = winRate * 100
   
   // Determine color based on win rate
@@ -53,7 +55,7 @@ const WinRateCard: React.FC<WinRateCardProps> = ({
       <div className="space-y-4">
         <div className="flex items-baseline space-x-2">
           <span className={cn('text-3xl font-bold', getWinRateColor(winRate))}>
-            {winRatePercentage.toFixed(1)}%
+            {formattedWinRate}
           </span>
         </div>
         

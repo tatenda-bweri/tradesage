@@ -1,68 +1,85 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/database/client'
+import { serializeDates } from '@/lib/utils/dateUtils'
+import { withErrorHandler, ValidationError } from '@/lib/middleware/errorHandler'
+import { createTradeSchema, tradesQuerySchema } from '@/lib/validation/schemas'
 
-const prisma = new PrismaClient()
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === 'GET') {
     // Fetch paginated trades
-    const { page = '1', pageSize = '20', accountId } = req.query
-    const pageNum = parseInt(page as string, 10) || 1
-    const sizeNum = parseInt(pageSize as string, 10) || 20
-    const skip = (pageNum - 1) * sizeNum
-    try {
-      const where = accountId ? { accountId: accountId as string } : {}
-      const [trades, total] = await Promise.all([
-        prisma.trade.findMany({
-          where,
-          orderBy: { openTime: 'desc' },
-          skip,
-          take: sizeNum
-        }),
-        prisma.trade.count({ where })
-      ])
-      res.status(200).json({ trades, total, page: pageNum, pageSize: sizeNum })
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch trades', details: error })
+    const query = tradesQuerySchema.parse(req.query)
+    const { page, pageSize, accountId, symbol, type, startDate, endDate } = query
+    const skip = (page - 1) * pageSize
+    
+    const where: any = {}
+    if (accountId) where.accountId = accountId
+    if (symbol) where.symbol = symbol
+    if (type) where.type = type
+    if (startDate || endDate) {
+      where.openTime = {}
+      if (startDate) where.openTime.gte = new Date(startDate)
+      if (endDate) where.openTime.lte = new Date(endDate)
     }
+    
+    const [trades, total] = await Promise.all([
+      prisma.trade.findMany({
+        where,
+        orderBy: { openTime: 'desc' },
+        skip,
+        take: pageSize
+      }),
+      prisma.trade.count({ where })
+    ])
+    
+    // Serialize dates for JSON response
+    const serializedTrades = trades.map(trade => serializeDates(trade))
+    
+    res.status(200).json({ 
+      trades: serializedTrades, 
+      total, 
+      page, 
+      pageSize 
+    })
   } else if (req.method === 'POST') {
     // Create a new trade
-    try {
-      const {
-        ticketId, accountId, symbol, type, volume, openPrice, closePrice,
-        openTime, closeTime, profit, swap, commission, stopLoss, takeProfit,
-        linkedTrades, tags, notes
-      } = req.body
-      if (!ticketId || !accountId || !symbol || !type || !openTime || !closeTime) {
-        return res.status(400).json({ error: 'Missing required fields' })
-      }
-      const trade = await prisma.trade.create({
-        data: {
-          ticketId,
-          accountId,
-          symbol,
-          type,
-          volume: Number(volume),
-          openPrice: Number(openPrice),
-          closePrice: Number(closePrice),
-          openTime: new Date(openTime),
-          closeTime: new Date(closeTime),
-          profit: Number(profit),
-          swap: Number(swap) || 0,
-          commission: Number(commission) || 0,
-          stopLoss: stopLoss !== undefined ? Number(stopLoss) : undefined,
-          takeProfit: takeProfit !== undefined ? Number(takeProfit) : undefined,
-          linkedTrades: linkedTrades ? JSON.stringify(linkedTrades) : undefined,
-          tags: tags ? JSON.stringify(tags) : undefined,
-          notes: notes || undefined
-        }
-      })
-      res.status(201).json({ trade })
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to create trade', details: error })
+    const validatedData = createTradeSchema.parse(req.body)
+    
+    // Check for duplicate ticket ID
+    const existingTrade = await prisma.trade.findUnique({
+      where: { ticketId: validatedData.ticketId }
+    })
+    
+    if (existingTrade) {
+      throw new ValidationError('Trade with this ticket ID already exists')
     }
+    
+    const trade = await prisma.trade.create({
+      data: {
+        ticketId: validatedData.ticketId,
+        accountId: validatedData.accountId,
+        symbol: validatedData.symbol,
+        type: validatedData.type,
+        volume: validatedData.volume,
+        openPrice: validatedData.openPrice,
+        closePrice: validatedData.closePrice,
+        openTime: new Date(validatedData.openTime),
+        closeTime: new Date(validatedData.closeTime),
+        profit: validatedData.profit,
+        swap: validatedData.swap,
+        commission: validatedData.commission,
+        stopLoss: validatedData.stopLoss,
+        takeProfit: validatedData.takeProfit,
+        linkedTrades: JSON.stringify(validatedData.linkedTrades),
+        tags: JSON.stringify(validatedData.tags),
+        notes: validatedData.notes
+      }
+    })
+    
+    res.status(201).json({ trade: serializeDates(trade) })
   } else {
     res.setHeader('Allow', ['GET', 'POST'])
     res.status(405).end(`Method ${req.method} Not Allowed`)
   }
-} 
+}
+
+export default withErrorHandler(handler) 

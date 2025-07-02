@@ -3,6 +3,7 @@ import { ChevronUp, ChevronDown, Calendar, TrendingUp, TrendingDown } from 'luci
 import { format } from 'date-fns'
 import { TradeRecord } from '@/lib/types'
 import { cn } from '@/lib/utils/cn'
+import { formatPnL, formatWinRate } from '@/lib/utils/formatters'
 
 interface DailyJournalProps {
   trades: TradeRecord[]

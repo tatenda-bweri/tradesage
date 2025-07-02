@@ -3,6 +3,7 @@ import { ChevronUp, ChevronDown, MoreHorizontal, Edit, Trash2, Copy } from 'luci
 import { format } from 'date-fns'
 import { TradeRecord } from '@/lib/types'
 import { cn } from '@/lib/utils/cn'
+import { formatPnL, formatLotSize } from '@/lib/utils/formatters'
 
 interface TradeTableProps {
   trades: TradeRecord[]
@@ -188,12 +189,14 @@ const TradeTable: React.FC<TradeTableProps> = ({
                 <td className="p-3 text-sm">{trade.openPrice.toFixed(5)}</td>
                 <td className="p-3 text-sm">{trade.closePrice.toFixed(5)}</td>
                 <td className="p-3">
-                  <span className={cn(
-                    'font-medium',
-                    trade.profit > 0 ? 'text-profit' : trade.profit < 0 ? 'text-loss' : 'text-text-secondary'
-                  )}>
-                    {trade.profit > 0 ? '+' : ''}{trade.profit.toFixed(2)}
-                  </span>
+                  {(() => {
+                    const pnlData = formatPnL(trade.profit)
+                    return (
+                      <span className={cn('font-medium', pnlData.colorClass)}>
+                        {pnlData.formatted}
+                      </span>
+                    )
+                  })()}
                 </td>
                 <td className="p-3">
                   <div className="flex items-center space-x-1">

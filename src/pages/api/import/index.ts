@@ -1,15 +1,40 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { PrismaClient } from '@prisma/client'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '../auth/[...nextauth]'
+import { z } from 'zod'
+
+import { prisma } from '@/lib/database/client'
 import { ExnessParser } from '@/lib/parsers/exness-parser'
 import { MetaTraderParser } from '@/lib/parsers/metatrader-parser'
 import { GenericCSVParser } from '@/lib/parsers/generic-csv-parser'
 
-const prisma = new PrismaClient()
+const importSchema = z.object({
+  broker: z.enum(['exness', 'metatrader', 'generic-csv']),
+  fileName: z.string().min(1),
+  fileContent: z.string().min(1),
+  columnMapping: z.record(z.string()).optional()
+})
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     try {
-      const { accountId, broker, fileName, fileContent, columnMapping } = req.body
+      // Check authentication
+      const session = await getServerSession(req, res, authOptions)
+      if (!session?.user?.accountId) {
+        return res.status(401).json({ error: 'Unauthorized' })
+      }
+
+      // Validate request body
+      const validationResult = importSchema.safeParse(req.body)
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: 'Invalid request data',
+          details: validationResult.error.errors
+        })
+      }
+
+      const { broker, fileName, fileContent, columnMapping } = validationResult.data
+      const accountId = session.user.accountId
 
       // Create import session
       const importSession = await prisma.importSession.create({

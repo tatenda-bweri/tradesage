@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import Head from 'next/head'
 import { TradingDashboard } from '@/components/dashboard'
 import { RadarChart } from '@/components/charts'
@@ -12,17 +12,12 @@ import MainLayout from '@/components/layout/main-layout'
 import { NotebookTabs } from '@/components/notebook'
 
 const DashboardRealPage = () => {
-  const [selectedAccountId] = useState('demo-account') // In a real app, this would come from auth
-  
   const { trades, loading: tradesLoading, error: tradesError, total, page, pageSize, setPage, setPageSize } = useTrades({
-    accountId: selectedAccountId,
     page: 1,
     pageSize: 20
   })
   
-  const { metrics, temporalAnalysis, loading: analyticsLoading, error: analyticsError } = useAnalytics({
-    accountId: selectedAccountId
-  })
+  const { metrics, temporalAnalysis, loading: analyticsLoading, error: analyticsError } = useAnalytics({})
 
   // Transform data for dashboard components
   const dashboardMetrics = metrics ? {
@@ -149,9 +144,15 @@ const DashboardRealPage = () => {
               </div>
               <TradeTable 
                 trades={trades}
-                onEdit={(trade) => console.log('Edit trade:', trade)}
-                onDelete={(id) => console.log('Delete trade:', id)}
-                onDuplicate={(trade) => console.log('Duplicate trade:', trade)}
+                onEdit={(trade) => {
+                  // TODO: Implement trade editing functionality
+                }}
+                onDelete={(id) => {
+                  // TODO: Implement trade deletion functionality
+                }}
+                onDuplicate={(trade) => {
+                  // TODO: Implement trade duplication functionality
+                }}
               />
               
               {/* Pagination */}

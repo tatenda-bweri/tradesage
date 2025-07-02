@@ -1,11 +1,12 @@
 import React from 'react'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import { formatPnL, formatPercentage, Currency } from '@/lib/utils/formatters'
 
 interface NetPnLCardProps {
   netPnL: number
   previousPeriodPnL?: number
-  currency?: string
+  currency?: Currency
   className?: string
 }
 
@@ -15,14 +16,8 @@ const NetPnLCard: React.FC<NetPnLCardProps> = ({
   currency = 'USD',
   className
 }) => {
-  const isProfit = netPnL >= 0
-  const formattedPnL = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(Math.abs(netPnL))
-
+  const pnlData = formatPnL(netPnL, { currency })
+  
   const percentageChange = previousPeriodPnL 
     ? ((netPnL - previousPeriodPnL) / Math.abs(previousPeriodPnL)) * 100
     : null
@@ -35,9 +30,9 @@ const NetPnLCard: React.FC<NetPnLCardProps> = ({
         </h3>
         <div className={cn(
           'p-2 rounded-full',
-          isProfit ? 'bg-profit bg-opacity-10' : 'bg-loss bg-opacity-10'
+          pnlData.isPositive ? 'bg-profit bg-opacity-10' : 'bg-loss bg-opacity-10'
         )}>
-          {isProfit ? (
+          {pnlData.isPositive ? (
             <TrendingUp className="w-5 h-5 text-profit" />
           ) : (
             <TrendingDown className="w-5 h-5 text-loss" />
@@ -47,11 +42,8 @@ const NetPnLCard: React.FC<NetPnLCardProps> = ({
       
       <div className="space-y-2">
         <div className="flex items-baseline space-x-2">
-          <span className={cn(
-            'text-3xl font-bold',
-            isProfit ? 'text-profit' : 'text-loss'
-          )}>
-            {isProfit ? '+' : '-'}{formattedPnL}
+          <span className={cn('text-3xl font-bold', pnlData.colorClass)}>
+            {pnlData.formatted}
           </span>
         </div>
         
@@ -61,7 +53,7 @@ const NetPnLCard: React.FC<NetPnLCardProps> = ({
               'text-sm font-medium',
               percentageChange >= 0 ? 'text-profit' : 'text-loss'
             )}>
-              {percentageChange >= 0 ? '+' : ''}{percentageChange.toFixed(1)}%
+              {percentageChange >= 0 ? '+' : ''}{formatPercentage(percentageChange)}
             </span>
             <span className="text-sm text-text-secondary">
               vs previous period

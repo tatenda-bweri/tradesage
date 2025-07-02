@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 
 interface PerformanceMetrics {
   totalTrades: number
@@ -25,7 +26,6 @@ interface TemporalAnalysis {
 }
 
 interface UseAnalyticsOptions {
-  accountId?: string
   startDate?: string
   endDate?: string
   autoFetch?: boolean
@@ -40,7 +40,8 @@ interface UseAnalyticsReturn {
 }
 
 export const useAnalytics = (options: UseAnalyticsOptions = {}): UseAnalyticsReturn => {
-  const { accountId, startDate, endDate, autoFetch = true } = options
+  const { startDate, endDate, autoFetch = true } = options
+  const { data: session, status } = useSession()
   
   const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null)
   const [temporalAnalysis, setTemporalAnalysis] = useState<TemporalAnalysis | null>(null)
@@ -48,13 +49,16 @@ export const useAnalytics = (options: UseAnalyticsOptions = {}): UseAnalyticsRet
   const [error, setError] = useState<string | null>(null)
 
   const fetchAnalytics = async () => {
-    if (!accountId) return
+    if (!session?.user?.id) {
+      setError('User not authenticated')
+      return
+    }
     
     setLoading(true)
     setError(null)
     
     try {
-      const params = new URLSearchParams({ accountId })
+      const params = new URLSearchParams({ accountId: session.user.id })
       if (startDate) params.append('startDate', startDate)
       if (endDate) params.append('endDate', endDate)
       
@@ -75,19 +79,23 @@ export const useAnalytics = (options: UseAnalyticsOptions = {}): UseAnalyticsRet
   }
 
   useEffect(() => {
-    if (autoFetch && accountId) {
+    if (autoFetch && status === 'authenticated' && session?.user?.id) {
       fetchAnalytics()
+    } else if (status === 'unauthenticated') {
+      setError('Please log in to view analytics')
     }
-  }, [accountId, startDate, endDate, autoFetch])
+  }, [session?.user?.id, status, startDate, endDate, autoFetch])
 
   const refetch = () => {
-    fetchAnalytics()
+    if (session?.user?.id) {
+      fetchAnalytics()
+    }
   }
 
   return {
     metrics,
     temporalAnalysis,
-    loading,
+    loading: loading || status === 'loading',
     error,
     refetch
   }

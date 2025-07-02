@@ -49,14 +49,8 @@ export default function Home() {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4 mt-8">
-              <Link href="/demo" className="btn btn-primary">
-                View Demo
-              </Link>
-              <Link href="/dashboard-real" className="btn btn-secondary">
-                Real Dashboard
-              </Link>
-              <Link href="/dashboard" className="btn btn-outline">
-                Sample Dashboard
+              <Link href="/dashboard" className="btn btn-primary">
+                Dashboard
               </Link>
             </div>
           </div>

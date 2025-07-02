@@ -4,6 +4,7 @@ import ProfitFactorCard from './profit-factor-card'
 import WinRateCard from './win-rate-card'
 import PnLChart from '@/components/charts/pnl-chart'
 import { cn } from '@/lib/utils/cn'
+import { type Currency } from '../../lib/utils/formatters'
 
 interface DashboardMetrics {
   netPnL: number
@@ -63,8 +64,8 @@ const TradingDashboard: React.FC<TradingDashboardProps> = ({
   return (
     <div className={cn('space-y-6', className)}>
       {/* Dashboard Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-xl sm:text-2xl font-bold text-text-primary">
           Trading Dashboard
         </h1>
         <div className="text-sm text-text-secondary">
@@ -73,11 +74,11 @@ const TradingDashboard: React.FC<TradingDashboardProps> = ({
       </div>
 
       {/* Metrics Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="dashboard-grid">
         <NetPnLCard
           netPnL={metrics.netPnL}
           previousPeriodPnL={metrics.previousPeriodPnL}
-          currency={metrics.currency}
+          currency={metrics.currency as Currency}
         />
         <ProfitFactorCard profitFactor={metrics.profitFactor} />
         <WinRateCard
@@ -85,9 +86,9 @@ const TradingDashboard: React.FC<TradingDashboardProps> = ({
           totalTrades={metrics.totalTrades}
           winningTrades={metrics.winningTrades}
         />
-        <div className="card card-hover p-6">
+        <div className="card card-hover card-padding">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-text-primary">
+            <h3 className="text-base sm:text-lg font-semibold text-text-primary">
               Total Trades
             </h3>
             <div className="p-2 rounded-full bg-surface-light">
@@ -95,7 +96,7 @@ const TradingDashboard: React.FC<TradingDashboardProps> = ({
             </div>
           </div>
           <div className="space-y-2">
-            <span className="text-3xl font-bold text-text-primary">
+            <span className="text-2xl sm:text-3xl font-bold text-text-primary">
               {metrics.totalTrades}
             </span>
             <p className="text-sm text-text-secondary">
@@ -106,35 +107,37 @@ const TradingDashboard: React.FC<TradingDashboardProps> = ({
       </div>
 
       {/* P&L Chart */}
-      <PnLChart
-        data={filteredPnLData}
-        timeFrame={timeFrame}
-        onTimeFrameChange={setTimeFrame}
-      />
+      <div className="chart-container">
+        <PnLChart
+          data={filteredPnLData}
+          timeFrame={timeFrame}
+          onTimeFrameChange={setTimeFrame}
+        />
+      </div>
 
       {/* Performance Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card p-4">
+      <div className="mobile-grid gap-4 sm:gap-6">
+        <div className="card card-padding">
           <h4 className="text-sm font-medium text-text-secondary mb-2">
             Average Win
           </h4>
-          <p className="text-xl font-semibold text-profit">
+          <p className="text-lg sm:text-xl font-semibold text-profit">
             +${(metrics.netPnL * metrics.winRate / metrics.winningTrades || 0).toFixed(2)}
           </p>
         </div>
-        <div className="card p-4">
+        <div className="card card-padding">
           <h4 className="text-sm font-medium text-text-secondary mb-2">
             Average Loss
           </h4>
-          <p className="text-xl font-semibold text-loss">
+          <p className="text-lg sm:text-xl font-semibold text-loss">
             -${(Math.abs(metrics.netPnL * (1 - metrics.winRate) / (metrics.totalTrades - metrics.winningTrades)) || 0).toFixed(2)}
           </p>
         </div>
-        <div className="card p-4">
+        <div className="card card-padding">
           <h4 className="text-sm font-medium text-text-secondary mb-2">
             Risk/Reward Ratio
           </h4>
-          <p className="text-xl font-semibold text-text-primary">
+          <p className="text-lg sm:text-xl font-semibold text-text-primary">
             {((metrics.netPnL * metrics.winRate / metrics.winningTrades) / 
               (Math.abs(metrics.netPnL * (1 - metrics.winRate) / (metrics.totalTrades - metrics.winningTrades))) || 0).toFixed(2)}:1
           </p>
