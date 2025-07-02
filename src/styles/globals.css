@@ -80,6 +80,10 @@
     @apply hover:bg-surface hover:text-text-primary;
   }
   
+  .btn-outline {
+    @apply border border-surface-light bg-surface text-text-primary hover:bg-surface-light;
+  }
+  
   /* Input components */
   .input {
     @apply flex h-10 w-full rounded-md border border-surface-light bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-profit focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50;

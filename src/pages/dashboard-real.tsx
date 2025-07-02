@@ -1,4 +1,3 @@
-/* eslint-disable */
 import React, { useState } from 'react'
 import Head from 'next/head'
 import { TradingDashboard } from '@/components/dashboard'
@@ -9,6 +8,8 @@ import { MetricsDashboard } from '@/components/analytics'
 import { useTrades } from '@/hooks/useTrades'
 import { useAnalytics } from '@/hooks/useAnalytics'
 import { Loading, ErrorBoundary } from '@/components/ui'
+import MainLayout from '@/components/layout/main-layout'
+import { NotebookTabs } from '@/components/notebook'
 
 const DashboardRealPage = () => {
   const [selectedAccountId] = useState('demo-account') // In a real app, this would come from auth
@@ -101,12 +102,11 @@ const DashboardRealPage = () => {
   }
 
   return (
-    <>
+    <MainLayout>
       <Head>
         <title>TradeSage Dashboard - Real Data</title>
         <meta name="description" content="Trading dashboard with real data from your trades" />
       </Head>
-
       <ErrorBoundary>
         <div className="min-h-screen bg-background text-text-primary">
           <div className="container mx-auto px-4 py-8">
@@ -114,6 +114,7 @@ const DashboardRealPage = () => {
               <h1 className="text-3xl font-bold mb-2">
                 Trading Dashboard
               </h1>
+              <NotebookTabs className="mb-6" />
               <p className="text-text-secondary">
                 Real-time performance metrics from your trading data
               </p>
@@ -184,7 +185,7 @@ const DashboardRealPage = () => {
           </div>
         </div>
       </ErrorBoundary>
-    </>
+    </MainLayout>
   )
 }
 

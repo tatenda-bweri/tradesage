@@ -1,6 +1,8 @@
 import React from 'react'
 import Head from 'next/head'
 import TradingDashboard from '@/components/dashboard/trading-dashboard'
+import MainLayout from '@/components/layout/main-layout'
+import { NotebookTabs } from '@/components/notebook'
 
 // Sample data for demonstration
 const sampleMetrics = {
@@ -37,9 +39,9 @@ const samplePnLData = [
   { date: '2024-01-21', cumulativePnL: 1250.75, dailyPnL: 127.00 }
 ]
 
-export default function DashboardPage() {
+export default function Dashboard() {
   return (
-    <>
+    <MainLayout>
       <Head>
         <title>Trading Dashboard - TradeSage</title>
         <meta name="description" content="Trading performance dashboard with real-time metrics" />
@@ -47,12 +49,20 @@ export default function DashboardPage() {
       
       <main className="min-h-screen bg-background p-6">
         <div className="max-w-7xl mx-auto">
-          <TradingDashboard
-            metrics={sampleMetrics}
-            pnlData={samplePnLData}
-          />
+          <div className="container mx-auto px-4 py-8">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold mb-2">
+                Trading Dashboard
+              </h1>
+              <NotebookTabs className="mb-6" />
+            </div>
+            <TradingDashboard
+              metrics={sampleMetrics}
+              pnlData={samplePnLData}
+            />
+          </div>
         </div>
       </main>
-    </>
+    </MainLayout>
   )
 } 

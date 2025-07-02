@@ -3,6 +3,7 @@ import { Menu, X, BarChart3, Calendar, FileText, BookOpen, Settings, ChevronLeft
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { cn } from '@/lib/utils/cn'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -157,6 +158,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <div className="text-sm text-text-secondary">
                 Welcome back, Trader
               </div>
+              <ThemeToggle />
             </div>
           </div>
         </div>
